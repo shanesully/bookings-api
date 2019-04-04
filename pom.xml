@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.studio-manager</groupId>
-	<artifactId>booking-api</artifactId>
+	<artifactId>fitness-bookings-api</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>booking-api</name>
+	<name>fitness-bookings-api</name>
 	<description>Demo project for Spring Boot</description>
 
 	<properties>
@@ -29,7 +29,13 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-	</dependencies>
+    <dependency>
+      <groupId>com.studio-manager</groupId>
+      <artifactId>studio-api</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+      <scope>compile</scope>
+    </dependency>
+  </dependencies>
 
 	<build>
 		<plugins>
