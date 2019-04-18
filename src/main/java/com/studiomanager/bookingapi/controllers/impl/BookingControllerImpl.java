@@ -24,30 +24,17 @@ public class BookingControllerImpl implements BookingController {
 
     @RequestMapping(value="/bookings", method= RequestMethod.POST)
     public ResponseEntity<Object> createBooking(@RequestBody Booking booking) {
-        if(fitnessClassExistsForBooking(booking.getClassId())) {
-            if(fitnessClassBookingsAvailable(booking.getClassId())) {
-                booking.setId(bookingMockService.getMockBookings().size() + 1);
+        if(classWithCapacityExists(booking.getClassId())) {
+            bookingMockService.addNewBooking(booking);
 
-                bookingMockService.getMockBookings()
-                    .put(booking.getId(), booking);
-
-                fitnessClassService.decrementFitnessClassCapacityById(booking.getClassId());
-
-                return new ResponseEntity<>("Booking Successful", HttpStatus.CREATED);
-            } else {
-                return new ResponseEntity<>("Booking Failed - Fitness Class at Capacity", HttpStatus.OK);
-            }
+            return new ResponseEntity<>("Booking Successful", HttpStatus.CREATED);
         } else {
-            return new ResponseEntity<>("Booking Failed - No Existing Fitness Class", HttpStatus.OK);
+            return new ResponseEntity<>("Booking Failed - No Class with Capacity Exists", HttpStatus.BAD_REQUEST);
         }
     }
 
     @RequestMapping("/bookings")
     public ResponseEntity<Object> getBookings() {
-
-        System.out.println("Classes: " + fitnessClassService.getFitnessClasses());
-
-        System.out.println("Bookings: " + bookingMockService.getMockBookings());
 
         return new ResponseEntity<>(bookingMockService.getMockBookings(), HttpStatus.OK);
     }
@@ -59,25 +46,8 @@ public class BookingControllerImpl implements BookingController {
 
     @RequestMapping(value="/bookings/{id}", method=RequestMethod.PUT)
     public ResponseEntity<Object> updateBooking(@PathVariable("id") int id, @RequestBody Booking booking) {
-        booking.setId(id);
-
-        // TODO get old class
-        Booking previousBooking;
-
-        if(fitnessClassExistsForBooking(booking.getClassId()) && fitnessClassBookingsAvailable(booking.getClassId())) {
-            previousBooking = bookingMockService.getBookingById(id);
-
-            bookingMockService.getMockBookings()
-                .remove(id); //TODO Minor - Add logging to this method
-
-            fitnessClassService.getFitnessClassById(previousBooking.getClassId())
-                .incrementCapacity();
-
-            bookingMockService.getMockBookings()
-                .put(id, booking); //TODO Minor - Add logging to this method
-
-            fitnessClassService.getFitnessClassById(booking.getClassId())
-                .decrementCapacity();
+        if(classWithCapacityExists(id)) {
+            bookingMockService.updateBookingByIdWithNewBody(id, booking); //TODO Minor - Add logging to this method
 
             return new ResponseEntity<>("Booking updated successfully", HttpStatus.OK);
         } else {
@@ -87,20 +57,33 @@ public class BookingControllerImpl implements BookingController {
 
     @RequestMapping(value="/bookings/{id}", method=RequestMethod.DELETE)
     public ResponseEntity<Object> deleteBooking(@PathVariable("id") int id) {
-        Booking bookingReference = bookingMockService.getBookingById(id);
+        if(bookingExistsWithId(id)) {
+            bookingMockService.removeBookingById(id);
 
-        bookingMockService.getMockBookings().remove(id); //TODO Minor - Add logging to this method
-
-        fitnessClassService.incrementFitnessClassCapacityById(bookingReference.getClassId());
-
-        return new ResponseEntity<>("Booking deleted", HttpStatus.OK);
+            return new ResponseEntity<>("Booking deleted", HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Booking Deletion Failed", HttpStatus.BAD_REQUEST);
+        }
     }
+
+    private boolean classWithCapacityExists(int id) {
+        return fitnessClassService.getFitnessClassById(id) != null ? true : false && fitnessClassService.getFitnessClassById(id).getCapacity() > 0;
+    }
+
 
     private boolean fitnessClassExistsForBooking(int id) {
         return fitnessClassService.getFitnessClassById(id) != null ? true : false;
     }
 
-    private boolean fitnessClassBookingsAvailable(int id) {
-        return fitnessClassService.getFitnessClassById(id).getCapacity() != 0 ? true : false;
+    private boolean bookingExistsWithId(int id) {
+        return bookingMockService.getBookingById(id) != null ? true : false;
+    }
+
+    private boolean classHasCapacity(int id) {
+        return fitnessClassService.getFitnessClassById(id).getCapacity() > 0;
+    }
+
+    private int getNextBookingId() {
+        return bookingMockService.getMockBookings().size() + 1;
     }
 }
