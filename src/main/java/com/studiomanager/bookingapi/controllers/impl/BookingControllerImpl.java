@@ -22,6 +22,7 @@ public class BookingControllerImpl implements BookingController {
     @Autowired
     BookingService bookingService;
 
+    //TODO - Update/create booking
     @RequestMapping(value="/bookings", method= RequestMethod.POST)
     public ResponseEntity<Object> createBooking(@RequestBody Booking booking) {
         if(classWithCapacityExists(booking.getClassId())) {
@@ -46,7 +47,7 @@ public class BookingControllerImpl implements BookingController {
 
     @RequestMapping(value="/bookings/{id}", method=RequestMethod.PUT)
     public ResponseEntity<Object> updateBooking(@PathVariable("id") int id, @RequestBody Booking booking) {
-        if(classWithCapacityExists(id)) {
+        if(classWithCapacityExists(booking.getClassId())) {
             bookingService.updateBookingByIdWithNewBody(id, booking); //TODO Minor - Add logging to this method
 
             return new ResponseEntity<>("Booking updated successfully", HttpStatus.OK);

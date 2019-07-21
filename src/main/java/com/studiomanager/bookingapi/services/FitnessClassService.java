@@ -11,7 +11,8 @@ public class FitnessClassService {
 
     private static final String HOST = "http://localhost";
     private static final String CLASSES_ENDPOINT = "/classes";
-    private static final String URL = HOST + ":" + CLASSES_ENDPOINT;
+    private static final String CLASSES_PORT = "8080";
+    private static final String URL = HOST + ":" + CLASSES_PORT + CLASSES_ENDPOINT;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SLF4JExample.class);
 

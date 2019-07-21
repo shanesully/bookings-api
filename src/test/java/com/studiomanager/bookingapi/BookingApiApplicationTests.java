@@ -44,7 +44,7 @@ public class BookingApiApplicationTests {
 	private TestRestTemplate restTemplate;
 
 	@MockBean
-  FitnessClassService fitnessClassService;
+  	FitnessClassService fitnessClassService;
 
 	static Booking newBooking;
 
