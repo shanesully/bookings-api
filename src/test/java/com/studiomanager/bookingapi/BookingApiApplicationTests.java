@@ -1,11 +1,14 @@
 package com.studiomanager.bookingapi;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.studiomanager.bookingapi.domain.Booking;
 import com.studiomanager.bookingapi.domain.FitnessClass;
-import com.studiomanager.bookingapi.services.impl.FitnessClassServiceImpl;
+import com.studiomanager.bookingapi.services.FitnessClassService;
+import java.time.LocalDate;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -15,12 +18,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
-
-import java.time.LocalDate;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -34,13 +38,13 @@ public class BookingApiApplicationTests {
 	static ObjectMapper mapper;
 
 	@LocalServerPort
-	private int port;
+	private int PORT;
 
 	@Autowired
 	private TestRestTemplate restTemplate;
 
 	@MockBean
-	FitnessClassServiceImpl fitnessClassService;
+  	FitnessClassService fitnessClassService;
 
 	static Booking newBooking;
 
@@ -49,7 +53,15 @@ public class BookingApiApplicationTests {
 		Mockito.when(fitnessClassService.getFitnessClasses()).thenReturn(SAMPLE_CLASS);
 		returnClassWithCapacityForBooking(1);
 
-		Mockito.when(fitnessClassService.decrementFitnessClassCapacityById(1)).thenReturn(new FitnessClass());
+
+		FitnessClass fitnessClass = new FitnessClass.Builder(2)
+				.withCapacity(10)
+				.withClassName("Running")
+				.withStartDate(LocalDate.parse("2019-04-01"))
+				.withEndDate(LocalDate.parse("2019-04-05"))
+				.build();
+
+		// Mockito.when(fitnessClassService.decrementFitnessClassCapacityById(1)).thenReturn(new FitnessClass());
 
 		mapper = new ObjectMapper();
 		setObjectMapperUseStringsForDates();
@@ -58,7 +70,7 @@ public class BookingApiApplicationTests {
 	@Test
 	public void testBookingsEndpointGet() {
 		ResponseEntity<String> response = this.restTemplate
-				.getForEntity(BASE_URI + port + BOOKINGS_ENDPOINT, String.class);
+				.getForEntity(BASE_URI + PORT + BOOKINGS_ENDPOINT, String.class);
 
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 	}
@@ -70,12 +82,11 @@ public class BookingApiApplicationTests {
 
 	@Test
 	public void testBookingsEndpointPost() throws Exception {
-		newBooking = new Booking();
-
-		newBooking.setId(2);
-		newBooking.setClassId(1);
-		newBooking.setMemberName("Luke O'Sullivan");
-		newBooking.setBookingDate(LocalDate.parse("2019-04-01"));
+		newBooking = new Booking.Builder(2)
+				.withClassId(1)
+				.withMemberName("Luke O'Sullivan")
+				.withBookingDate(LocalDate.parse("2019-04-01"))
+				.build();
 
 		String requestJson = mapper.writeValueAsString(newBooking);
 
@@ -95,12 +106,10 @@ public class BookingApiApplicationTests {
 	public void testBookingsEndpointDelete() {
 		assertThat(getBookings()).contains("bookingDate");
 
-		String requestJson = "";
-
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
 
-		HttpEntity<Object> request = new HttpEntity<>(requestJson, headers);
+		HttpEntity<Object> request = new HttpEntity<>("", headers);
 
 		deleteBooking(1, request);
 
@@ -117,31 +126,29 @@ public class BookingApiApplicationTests {
 	}
 
 	private void returnClassWithCapacityForBooking(int id) {
-		FitnessClass fitnessClass = new FitnessClass();
-		fitnessClass.setCapacity(9);
+		FitnessClass fitnessClass = new FitnessClass(0);
 
 		Mockito.when(fitnessClassService.getFitnessClassById(id)).thenReturn(fitnessClass);
 	}
 
 	private void returnClassWithoutCapacityForBooking(int id) {
-		FitnessClass fitnessClass = new FitnessClass();
-		fitnessClass.setCapacity(0);
+		FitnessClass fitnessClass = new FitnessClass(0);
 
 		Mockito.when(fitnessClassService.getFitnessClassById(id)).thenReturn(fitnessClass);
 	}
 
 	private ResponseEntity<String> createBooking(HttpEntity<Object> request) {
-		return this.restTemplate
-				.exchange(BASE_URI + port + BOOKINGS_ENDPOINT, HttpMethod.POST, request, String.class);
+		return restTemplate
+				.exchange(BASE_URI + PORT + BOOKINGS_ENDPOINT, HttpMethod.POST, request, String.class);
 	}
 
 	private String getBookings() {
-		return this.restTemplate.getForObject(BASE_URI + port + BOOKINGS_ENDPOINT,
+		return restTemplate.getForObject(BASE_URI + PORT + BOOKINGS_ENDPOINT,
 				String.class);
 	}
 
 	private void deleteBooking(int id, HttpEntity request) {
-		this.restTemplate
-				.exchange(BASE_URI + port + BOOKINGS_ENDPOINT +"/" + id, HttpMethod.DELETE, request, String.class);
+		restTemplate
+				.exchange(BASE_URI + PORT + BOOKINGS_ENDPOINT +"/" + id, HttpMethod.DELETE, request, String.class);
 	}
 }
